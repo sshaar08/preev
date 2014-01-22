@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+"""
+Display averaged Bitcoin value from Preev.
+"""
+
+import argparse
+import json
+import sys
+import urllib
+import urllib2
+
+DEFAULT_CURRENCY = 'USD'
+DEFAULT_SOURCES = ['bitstamp', 'btce', 'localbitcoins', 'mtgox']
+
+class PreevError(Exception):
+    """
+    Error returned from Preev.
+    """
+
+def main():
+    """
+    Display the averaged currency from Preev.
+    """
+
+    parser = argparse.ArgumentParser(description='Display preev.com\'s Bitcoin rate')
+    parser.add_argument('currency', metavar='CURRENCY', nargs='?', default='USD',
+        help='Defaults to {}'.format(DEFAULT_CURRENCY))
+    parser.add_argument('sources', metavar='SOURCES', nargs='*', default=DEFAULT_SOURCES,
+        help='Defaults to {}'.format(' '.join(DEFAULT_SOURCES)))
+    args = parser.parse_args()
+
+    try:
+        print average_rate(get_data(args.currency, args.sources))
+    except PreevError as exc:
+        print >>sys.stderr, exc
+        sys.exit(1)
+
+def average_rate(data):
+    """
+    Given data from Preev, average the rate using their algorithm.
+    """
+
+    total_volume = sum(
+        float(market['vol'])
+        for market in data['markets'].itervalues()
+        if market['vol']
+    )
+
+    return sum(
+        float(market['price']) * float(market['vol']) / total_volume
+        for market in data['markets'].itervalues()
+        if market['price'] and market['vol']
+    )
+
+def get_data(currency, sources):
+    """
+    Get decoded JSON data from Preev.
+    """
+
+    url_format = 'http://preev.com/pulse/source:{}/unit:btc,{}'
+    url = url_format.format(
+        urllib.quote(','.join(sources)),
+        urllib.quote(currency.lower())
+    )
+    response = urllib2.urlopen(url)
+    json_data = response.read()
+    try:
+        return json.loads(json_data)
+    except ValueError:
+        raise PreevError("Preev returned a non-JSON response: {!r}".format(json_data))
+
+if __name__ == '__main__':
+    main()
