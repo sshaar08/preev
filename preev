@@ -9,9 +9,10 @@ import json
 import sys
 import urllib
 import urllib2
+import ipdb
 
 DEFAULT_CURRENCY = 'USD'
-DEFAULT_SOURCES = ['bitstamp', 'btce', 'localbitcoins', 'mtgox']
+DEFAULT_SOURCES = ['bitstamp', 'btce', 'localbitcoins', 'bitfinex']
 
 class PreevError(Exception):
     """
@@ -21,6 +22,8 @@ class PreevError(Exception):
 def main():
     """
     Display the averaged currency from Preev.
+
+    new url http://preev.com/pulse/units:btc+usd/sources:bitfinex+bitstamp+btce+localbitcoins
     """
 
     parser = argparse.ArgumentParser(description='Display preev.com\'s Bitcoin rate')
@@ -40,28 +43,36 @@ def average_rate(data):
     """
     Given data from Preev, average the rate using their algorithm.
     """
+    
 
     total_volume = sum(
-        float(market['vol'])
-        for market in data['markets'].itervalues()
-        if market['vol']
+        float(market['volume'])
+        #for market in data['markets'].itervalues()
+        for market in data['btc']['usd'].itervalues()
+        if market['volume']
     )
 
     return sum(
-        float(market['price']) * float(market['vol']) / total_volume
-        for market in data['markets'].itervalues()
-        if market['price'] and market['vol']
+        float(market['last']) * float(market['volume']) / total_volume
+        #for market in data['markets'].itervalues()
+        for market in data['btc']['usd'].itervalues()
+        if market['last'] and market['volume']
     )
 
 def get_data(currency, sources):
     """
     Get decoded JSON data from Preev.
+    new url http://preev.com/pulse/units:btc+usd/sources:bitfinex+bitstamp+btce+localbitcoins
+    cur   http://preev.com/pulse/units:btc+bitstamp%2Cbtce%2Clocalbitcoins%2Cbitfinex/sources:usd
     """
-
-    url_format = 'http://preev.com/pulse/source:{}/unit:btc,{}'
+    #ipdb.set_trace()
+    url_format = 'http://preev.com/pulse/units:btc+usd/sources:{}'
+    #url_format = 'http://preev.com/pulse/source:{}/unit:btc,{}'
     url = url_format.format(
-        urllib.quote(','.join(sources)),
+        urllib.quote('+'.join(sources)),
         urllib.quote(currency.lower())
+        
+        #urllib.quote(currency.upper())
     )
     response = urllib2.urlopen(url)
     json_data = response.read()
