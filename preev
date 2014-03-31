@@ -10,6 +10,7 @@ import sys
 import urllib
 import urllib2
 import ipdb
+import example
 
 DEFAULT_CURRENCY = 'USD'
 DEFAULT_SOURCES = ['bitstamp', 'btce', 'localbitcoins', 'bitfinex']
@@ -39,6 +40,7 @@ def main():
         print >>sys.stderr, exc
         sys.exit(1)
 
+
 def average_rate(data):
     """
     Given data from Preev, average the rate using their algorithm.
@@ -58,6 +60,7 @@ def average_rate(data):
         for market in data['btc']['usd'].itervalues()
         if market['last'] and market['volume']
     )
+    
 
 def get_data(currency, sources):
     """
@@ -66,7 +69,12 @@ def get_data(currency, sources):
     cur   http://preev.com/pulse/units:btc+bitstamp%2Cbtce%2Clocalbitcoins%2Cbitfinex/sources:usd
     """
     #ipdb.set_trace()
-    url_format = 'http://preev.com/pulse/units:btc+usd/sources:{}'
+    '''need to add the currency to the url here somehow'''
+    first = 'http://preev.com/pulse/units:btc+'
+    second = '/sources:{}'
+    url_format = first + currency + second
+    print url_format
+    #url_format = 'http://preev.com/pulse/units:btc+usd/sources:{}'
     #url_format = 'http://preev.com/pulse/source:{}/unit:btc,{}'
     url = url_format.format(
         urllib.quote('+'.join(sources)),
